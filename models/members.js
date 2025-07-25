@@ -13,6 +13,7 @@ const memberSchema = new mongoose.Schema({
     },
     mylci: {
         type: String,
+        unique: true,
         trim: true
     },
     email: {
@@ -47,8 +48,8 @@ const memberSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['active', 'inactive', 'pending', 'suspended'],
-        default: 'active'
+        enum: ['approved', 'rejected', 'pending'],
+        default: 'pending'
     },
     position: {
         type: String,
