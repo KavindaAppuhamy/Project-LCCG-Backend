@@ -31,7 +31,14 @@ const memberSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        trim: true
+        trim: true,
+        required: [true, 'Phone number is required'],
+        validate: {
+            validator: function(v) {
+                return /^\d{10}$/.test(v);
+            },
+            message: props => `${props.value} is not a valid phone number!`
+        }
     },
     dob: {
         type: Date,
@@ -49,15 +56,17 @@ const memberSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['approved', 'rejected', 'pending'],
-        default: 'pending'
+        default: 'pending',
+        required: [true, 'Status is required']
     },
     position: {
         type: String,
-        trim: true
+        trim: true,
+        required: [true, 'Position is required'],
     },
     image: {
         type: String, // This will store the path or URL to the image
-        default: 'https://www.w3schools.com/howto/img_avatar.png'
+        default: 'https://www.w3schools.com/howto/img_avatar.png' // Default image URL
     }
 }, 
 
