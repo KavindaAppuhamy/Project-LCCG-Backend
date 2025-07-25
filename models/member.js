@@ -55,7 +55,7 @@ const memberSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['approved', 'rejected', 'pending'],
+        enum: ['accept', 'reject', 'pending'],
         default: 'pending',
         required: [true, 'Status is required']
     },

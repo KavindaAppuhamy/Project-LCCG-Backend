@@ -1,0 +1,232 @@
+import Member from "../models/member.js";
+import { isAdminValid } from "./adminController.js";
+
+// Utility to enrich member with age and fullName
+async function enrichMember(member) {
+    return {
+        ...member._doc,
+        age: member.age,
+        fullName: member.fullName
+    };
+}
+
+export async function getMembers(req, res) {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const baseQuery = isAdminValid(req) ? {} : { status: 'accept' };
+        const members = await Member.find(baseQuery).skip(skip).limit(limit);
+        const totalMembers = await Member.countDocuments(baseQuery);
+
+        const enrichedMembers = await Promise.all(members.map(enrichMember));
+
+        res.json({
+            members: enrichedMembers,
+            total: totalMembers,
+            page,
+            pages: Math.ceil(totalMembers / limit)
+        });
+    } catch (err) {
+        res.status(500).json({ 
+            message: "Failed to get members",
+            error: err.message 
+        });
+    }
+}
+
+export async function createMember(req, res) {
+    try {
+        const member = new Member(req.body);
+        await member.save();
+
+        res.status(201).json({
+            message: "Member created successfully",
+            member: await enrichMember(member)
+        });
+    } catch (err) {
+        if (err.code === 11000) {
+            const field = Object.keys(err.keyPattern)[0];
+            res.status(409).json({
+                message: `${field} already exists`,
+                error: err.message
+            });
+        } else if (err.name === 'ValidationError') {
+            res.status(400).json({
+                message: "Validation failed",
+                error: err.message
+            });
+        } else {
+            res.status(500).json({
+                message: "Failed to create member",
+                error: err.message
+            });
+        }
+    }
+}
+
+export async function getMemberById(req, res) {
+    try {
+        const member = await Member.findById(req.params.id);
+
+        if (!member) {
+            return res.status(404).json({ message: "Member not found" });
+        }
+
+        if (member.status !== 'accept' && !isAdminValid(req)) {
+            return res.status(404).json({ message: "Member not found" });
+        }
+
+        res.json(await enrichMember(member));
+    } catch (err) {
+        res.status(500).json({
+            message: "Failed to get member",
+            error: err.message
+        });
+    }
+}
+
+export async function updateMember(req, res) {
+    if (!isAdminValid(req)) {
+        return res.status(403).json({
+            message: "You are not authorized to update member details"
+        });
+    }
+
+    try {
+        const member = await Member.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+
+        if (!member) {
+            return res.status(404).json({ message: "Member not found" });
+        }
+
+        res.json({
+            message: "Member updated successfully",
+            member: await enrichMember(member)
+        });
+    } catch (err) {
+        if (err.code === 11000) {
+            const field = Object.keys(err.keyPattern)[0];
+            res.status(409).json({
+                message: `${field} already exists`,
+                error: err.message
+            });
+        } else if (err.name === 'ValidationError') {
+            res.status(400).json({
+                message: "Validation failed",
+                error: err.message
+            });
+        } else {
+            res.status(500).json({
+                message: "Failed to update member",
+                error: err.message
+            });
+        }
+    }
+}
+
+export async function deleteMember(req, res) {
+    if (!isAdminValid(req)) {
+        return res.status(403).json({
+            message: "You are not authorized to delete members"
+        });
+    }
+
+    try {
+        const member = await Member.findByIdAndDelete(req.params.id);
+
+        if (!member) {
+            return res.status(404).json({ message: "Member not found" });
+        }
+
+        res.json({ message: "Member deleted successfully" });
+    } catch (err) {
+        res.status(500).json({
+            message: "Failed to delete member",
+            error: err.message
+        });
+    }
+}
+
+export async function updateMemberStatus(req, res) {
+    if (!isAdminValid(req)) {
+        return res.status(403).json({
+            message: "You are not authorized to update member status"
+        });
+    }
+
+    try {
+        const { status } = req.body;
+        const validStatuses = ['accept', 'reject', 'pending'];
+
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                message: "Invalid status value"
+            });
+        }
+
+        const member = await Member.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { new: true }
+        );
+
+        if (!member) {
+            return res.status(404).json({ message: "Member not found" });
+        }
+
+        res.json({
+            message: "Member status updated successfully",
+            member: await enrichMember(member)
+        });
+    } catch (err) {
+        res.status(500).json({
+            message: "Failed to update member status",
+            error: err.message
+        });
+    }
+}
+
+export async function searchMembers(req, res) {
+    try {
+        const { query } = req.query;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const searchQuery = {
+            $or: [
+                { firstName: { $regex: query, $options: 'i' } },
+                { lastName: { $regex: query, $options: 'i' } },
+                { email: { $regex: query, $options: 'i' } },
+                { mylci: { $regex: query, $options: 'i' } }
+            ]
+        };
+
+        if (!isAdminValid(req)) {
+            searchQuery.status = 'accept';
+        }
+
+        const members = await Member.find(searchQuery).skip(skip).limit(limit);
+        const total = await Member.countDocuments(searchQuery);
+
+        const enrichedMembers = await Promise.all(members.map(enrichMember));
+
+        res.json({
+            members: enrichedMembers,
+            total,
+            page,
+            pages: Math.ceil(total / limit)
+        });
+    } catch (err) {
+        res.status(500).json({
+            message: "Search failed",
+            error: err.message
+        });
+    }
+}
