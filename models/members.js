@@ -1,0 +1,93 @@
+import mongoose from "mongoose";
+
+const memberSchema = new mongoose.Schema({
+    firstName: {
+        type: String,
+        required: [true, 'First name is required'],
+        trim: true
+    },
+    lastName: {
+        type: String,
+        required: [true, 'Last name is required'],
+        trim: true
+    },
+    mylci: {
+        type: String,
+        trim: true
+    },
+    email: {
+        type: String,
+        required: [true, 'Email is required'],
+        unique: true,
+        trim: true,
+        lowercase: true,
+        validate: {
+            validator: function(v) {
+                return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(v);
+            },
+            message: props => `${props.value} is not a valid email address!`
+        }
+    },
+    phone: {
+        type: String,
+        trim: true
+    },
+    dob: {
+        type: Date,
+        required: [true, 'Date of birth is required']
+    },
+    gender: {
+        type: String,
+        enum: ['male', 'female', 'other'],
+        required: [true, 'Gender is required']
+    },
+    joinDate: {
+        type: Date,
+        default: Date.now
+    },
+    status: {
+        type: String,
+        enum: ['active', 'inactive', 'pending', 'suspended'],
+        default: 'active'
+    },
+    position: {
+        type: String,
+        trim: true
+    },
+    image: {
+        type: String, // This will store the path or URL to the image
+        default: 'https://www.w3schools.com/howto/img_avatar.png'
+    }
+}, 
+
+// Adds createdAt and updatedAt fields automatically
+{
+    timestamps: true, 
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+// Virtual for full name
+memberSchema.virtual('fullName').get(function() {
+    return `${this.firstName} ${this.lastName}`;
+});
+
+// Virtual for age calculation
+memberSchema.virtual('age').get(function() {
+    if (!this.dob) return null;
+    const diff = Date.now() - this.dob.getTime();
+    const ageDate = new Date(diff);
+    return Math.abs(ageDate.getUTCFullYear() - 1970);
+});
+
+// Middleware to ensure email is lowercase before saving
+memberSchema.pre('save', function(next) {
+    if (this.isModified('email')) {
+        this.email = this.email.toLowerCase();
+    }
+    next();
+});
+
+const Member = mongoose.model("Member", memberSchema);
+
+export default Member; 
