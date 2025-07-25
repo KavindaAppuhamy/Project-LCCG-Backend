@@ -17,3 +17,8 @@ export function isAdminValid(req) {
 
   return true;
 }
+
+export const authenticate = (req, res, next) => {
+    // check JWT, decode user, attach to req.user
+    next();
+};
