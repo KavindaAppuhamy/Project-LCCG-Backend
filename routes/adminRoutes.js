@@ -1,5 +1,5 @@
 import express from "express";
-import { postAdmins } from "../controllers/adminController.js";
+import { adminLogin, postAdmins } from "../controllers/adminController.js";
 import { sendOtp, verifyOtp } from "../controllers/otpController.js";
 
 
@@ -7,6 +7,7 @@ import { sendOtp, verifyOtp } from "../controllers/otpController.js";
 const adminRouter = express.Router();
 
 adminRouter.post("/", postAdmins)
+adminRouter.post("/login",adminLogin)
 adminRouter.post("/send", sendOtp);
 adminRouter.post("/verify", verifyOtp);
 
