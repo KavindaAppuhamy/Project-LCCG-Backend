@@ -52,7 +52,7 @@ export async function postAdmins(req, res) {
     });
   }
 }
-backend/dhananjaya
+
 export function adminLogin(req, res) {
       const credentials = req.body;
 
@@ -143,9 +143,4 @@ export async function deleteAdmin(req, res) {
     res.status(500).json({ message: "Failed to delete admin", error: err.message });
   }
 }
-
-export const authenticate = (req, res, next) => {
-    // check JWT, decode user, attach to req.user
-    next();
-};
 
