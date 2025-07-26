@@ -1,6 +1,8 @@
 import express from "express";
-import { postAdmins } from "../controllers/adminController";
-import { sendOtp, verifyOtp } from "../controllers/otpController";
+import { postAdmins } from "../controllers/adminController.js";
+import { sendOtp, verifyOtp } from "../controllers/otpController.js";
+
+
 
 const adminRouter = express.Router();
 
