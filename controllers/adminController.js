@@ -23,35 +23,31 @@ export function isAdminValid(req) {
 
 
 //creeate admin
-export function postAdmins(req, res) {
-  const user = req.body;
+export async function postAdmins(req, res) {
+  try {
+    const user = req.body;
 
-  // Hash password
-  const password = req.body.password;
-  const passwordHash = bcrypt.hashSync(password, 10);
-  user.password = passwordHash;
+    // Hash password
+    const password = user.password;
+    const passwordHash = bcrypt.hashSync(password, 10);
+    user.password = passwordHash;
 
-  const newAdmin = new Admin(user);
+    const newAdmin = new Admin(user);
+    await newAdmin.save();
 
-  newAdmin
-    .save()
-    .then(() => {
-      // Generate 4-digit OTP
-      const otp = Math.floor(1000 + Math.random() * 9000);
+    // Generate OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const newOtp = new Otp({ email: user.email, otp });
+    await newOtp.save();
 
-      const newOtp = new Otp({
-        email: req.body.email,
-        otp: otp.toString(),
-      });
+    // Send email
+    await sendOtpEmail(user.email, otp);
 
-      newOtp.save().then(() => {
-        sendOtpEmail(user.email, otp.toString());  // Send OTP email
-        res.json({ message: "Admin created successfully. OTP sent." });
-      });
-    })
-    .catch(() => {
-      res.json({
-        message: "Admin creation failed",
-      });
+    res.json({ message: "Admin created successfully. OTP sent." });
+  } catch (error) {
+    res.json({
+      message: "Admin creation failed",
+      error: error.message,
     });
+  }
 }
