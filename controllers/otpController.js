@@ -1,12 +1,15 @@
 import Otp from "../models/otp.js";
 import nodemailer from "nodemailer";
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 // Configure Nodemailer (You should use env vars in production)
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-        user: "your_email@gmail.com", // Replace with your email
-        pass: "your_email_password"   // Replace with your email password or App Password
+        user: process.env.EMAIL, // Replace with your email
+        pass: process.env.PASSWORD   // Replace with your email password or App Password
     }
 });
 
