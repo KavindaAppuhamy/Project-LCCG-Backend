@@ -51,3 +51,8 @@ export async function postAdmins(req, res) {
     });
   }
 }
+
+export const authenticate = (req, res, next) => {
+    // check JWT, decode user, attach to req.user
+    next();
+};

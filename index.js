@@ -5,6 +5,8 @@ import mongoose from 'mongoose'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 import cors from 'cors'
+import memberRouter from './routes/memberRoutes.js'
+import otpRouter from './routes/otpRoutes.js'
 
 
 
@@ -58,9 +60,9 @@ mongoose.connect(connectionString).then(
 )
 
 // Route mounting
-
-app.use("/api/admin",adminRouter) 
-
+app.use("/api/admin",adminRouter)
+app.use("/api/member", memberRouter)
+app.use("/api/otp", otpRouter) 
 
 // Start the server
 const PORT = process.env.PORT || 5000;

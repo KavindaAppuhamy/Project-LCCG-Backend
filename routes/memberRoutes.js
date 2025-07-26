@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-    getAllMembers,
+    getMembers,
     createMember,
     getMemberById,
     updateMember,
@@ -13,7 +13,7 @@ import { authenticate, isAdminValid } from '../controllers/adminController.js';
 const memberRouter = express.Router();
 
 // Public routes
-memberRouter.get('/', getAllMembers);
+memberRouter.get('/', getMembers);
 memberRouter.get('/search', searchMembers);
 memberRouter.get('/:id', getMemberById);
 memberRouter.post('/', createMember);
