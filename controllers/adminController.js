@@ -101,3 +101,44 @@ export function adminLogin(req, res) {
         res.status(500).json({ message: "Login failed due to server error." });
       });
 }
+export async function updateAdmin(req, res) {
+  if (!isAdminValid(req)) {
+    return res.status(403).json({ message: "Unauthorized access" });
+  }
+
+  const adminId = req.params.id;
+  const updateData = req.body;
+
+  try {
+    const updatedAdmin = await Admin.findByIdAndUpdate(adminId, updateData, { new: true });
+
+    if (!updatedAdmin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    res.json({ message: "Admin updated successfully", admin: updatedAdmin });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update admin", error: err.message });
+  }
+}
+
+// 🧹 Delete admin
+export async function deleteAdmin(req, res) {
+  if (!isAdminValid(req)) {
+    return res.status(403).json({ message: "Unauthorized access" });
+  }
+
+  const adminId = req.params.id;
+
+  try {
+    const deletedAdmin = await Admin.findByIdAndDelete(adminId);
+
+    if (!deletedAdmin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    res.json({ message: "Admin deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete admin", error: err.message });
+  }
+}
