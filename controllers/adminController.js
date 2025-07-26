@@ -1,7 +1,7 @@
 import Admin from "../models/admin.js"
 import bcrypt from "bcryptjs";
 import Otp from "../models/otp.js";
-import { sendOtp } from "../controllers/otpController.js";
+import { sendOtpEmail } from "../controllers/otpController.js";
 
 export function isAdminValid(req) {
   if (!req.user) {
@@ -45,7 +45,7 @@ export function postAdmins(req, res) {
       });
 
       newOtp.save().then(() => {
-        sendOtp(user.email, otp); // Send OTP email
+        sendOtpEmail(user.email, otp.toString());  // Send OTP email
         res.json({ message: "Admin created successfully. OTP sent." });
       });
     })
