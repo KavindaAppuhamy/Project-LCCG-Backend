@@ -4,6 +4,7 @@ import mongoose from 'mongoose'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 import cors from 'cors'
+import adminRouter from './routes/adminRoutes'
 
 
 
@@ -57,8 +58,9 @@ mongoose.connect(connectionString).then(
 
 // Route mounting
 
+app.use("/api/admin",adminRouter) 
 
-
+app.use("/api/admin",adminRouter) 
 
 
 // Start the server
