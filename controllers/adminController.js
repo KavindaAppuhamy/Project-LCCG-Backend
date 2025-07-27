@@ -144,3 +144,12 @@ export async function deleteAdmin(req, res) {
   }
 }
 
+
+export async function getAllAdmins(req, res) {
+  try {
+    const admins = await Admin.find();
+    res.json({ admins });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch admins", error: err.message });
+  }
+}
