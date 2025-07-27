@@ -7,6 +7,7 @@ import dotenv from 'dotenv'
 import cors from 'cors'
 import memberRouter from './routes/memberRoutes.js'
 import otpRouter from './routes/otpRoutes.js'
+import newsletterRouter from './routes/newsletterRoutes.js'
 
 
 
@@ -62,7 +63,8 @@ mongoose.connect(connectionString).then(
 // Route mounting
 app.use("/api/admin",adminRouter)
 app.use("/api/member", memberRouter)
-app.use("/api/otp", otpRouter) 
+app.use("/api/otp", otpRouter)
+app.use("/api/newsletter", newsletterRouter) 
 
 // Start the server
 const PORT = process.env.PORT || 5000;
