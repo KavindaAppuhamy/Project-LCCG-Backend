@@ -144,3 +144,29 @@ export async function deleteAdmin(req, res) {
   }
 }
 
+
+export async function getAllAdmins(req, res) {
+  try {
+    const admins = await Admin.find();
+    res.json({ admins });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch admins", error: err.message });
+  }
+}
+
+
+export async function getAdminById(req, res) {
+  const adminId = req.params.id;
+
+  try {
+    const admin = await Admin.findById(adminId);
+
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    res.json({ admin });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch admin", error: err.message });
+  }
+}
