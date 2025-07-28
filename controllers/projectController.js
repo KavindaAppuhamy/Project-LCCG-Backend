@@ -66,3 +66,11 @@ export const deleteProject = async (req, res) => {
     res.status(500).json({ message: "Failed to delete project", error: error.message });
   }
 };
+export const viewAllProjects = async (req, res) => {
+  try {
+    const projects = await Project.find();
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to load projects", error: error.message });
+  }
+};
