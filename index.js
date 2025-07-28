@@ -8,6 +8,7 @@ import cors from 'cors'
 import memberRouter from './routes/memberRoutes.js'
 import otpRouter from './routes/otpRoutes.js'
 import newsletterRouter from './routes/newsletterRoutes.js'
+import projectRouter from './routes/projectRouter.js'
 
 
 
@@ -64,7 +65,8 @@ mongoose.connect(connectionString).then(
 app.use("/api/admin",adminRouter)
 app.use("/api/member", memberRouter)
 app.use("/api/otp", otpRouter)
-app.use("/api/newsletter", newsletterRouter) 
+app.use("/api/newsletter", newsletterRouter)
+app.use("/api/project", projectRouter) 
 
 // Start the server
 const PORT = process.env.PORT || 5000;
