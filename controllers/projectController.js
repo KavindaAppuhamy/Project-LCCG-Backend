@@ -22,12 +22,18 @@ export const createProject = async (req, res) => {
   }
 
   try {
+    // If highlight is true, un-highlight all others first
+    if (req.body.highlight === true) {
+      await Project.updateMany({ highlight: true }, { $set: { highlight: false } });
+    }
+
     const project = await Project.create(req.body);
     res.status(201).json(project);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // Update project (admin only)
 export const updateProject = async (req, res) => {
@@ -38,15 +44,23 @@ export const updateProject = async (req, res) => {
   const { id } = req.params;
 
   try {
+    // If highlight is being set to true, remove it from others
+    if (req.body.highlight === true) {
+      await Project.updateMany({ highlight: true }, { $set: { highlight: false } });
+    }
+
     const updatedProject = await Project.findByIdAndUpdate(id, req.body, { new: true });
     if (!updatedProject) {
       return res.status(404).json({ message: "Project not found" });
     }
+
     res.json(updatedProject);
   } catch (error) {
     res.status(500).json({ message: "Failed to update project", error: error.message });
   }
 };
+
+
 
 // Delete project (admin only)
 export const deleteProject = async (req, res) => {
