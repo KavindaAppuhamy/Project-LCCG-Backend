@@ -1,4 +1,4 @@
-import Testimonial from "../models/testimonialModel.js";
+import Testimonial from "../models/testimonial.js";
 import { isAdminValid } from "./adminController.js";
 
 // Get all testimonials

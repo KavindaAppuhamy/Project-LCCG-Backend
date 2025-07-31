@@ -1,17 +1,17 @@
 import express from "express";
 import {getAllTestimonials, getTestimonial, createTestimonial, updateTestimonial, deleteTestimonial} from "../controllers/testimonialController.js";
 
-const router = express.Router();
+const testimonialRouter = express.Router();
 
 
-router.get("/", getAllTestimonials);
+testimonialRouter.get("/", getAllTestimonials);
 
-router.get("/:id", getTestimonial);
+testimonialRouter.get("/:id", getTestimonial);
 
-router.post("/", createTestimonial);
+testimonialRouter.post("/", createTestimonial);
 
-router.put("/:id", updateTestimonial);
+testimonialRouter.put("/:id", updateTestimonial);
 
-router.delete("/:id", deleteTestimonial);
+testimonialRouter.delete("/:id", deleteTestimonial);
 
-export default router;
+export default testimonialRouter;
