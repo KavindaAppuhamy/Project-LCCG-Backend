@@ -256,26 +256,35 @@ export async function updateMemberStatus(req, res) {
 
 export async function searchMembers(req, res) {
     try {
-        const { query } = req.query;
+        const { query, status } = req.query;
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const searchQuery = {
+        const baseSearch = {
             $or: [
-                { firstName: { $regex: query, $options: 'i' } },
-                { lastName: { $regex: query, $options: 'i' } },
-                { email: { $regex: query, $options: 'i' } },
-                { mylci: { $regex: query, $options: 'i' } }
+                { firstName: { $regex: query || '', $options: 'i' } },
+                { lastName: { $regex: query || '', $options: 'i' } },
+                { email: { $regex: query || '', $options: 'i' } },
+                { mylci: { $regex: query || '', $options: 'i' } }
             ]
         };
 
-        if (!isAdminValid(req)) {
-            searchQuery.status = 'accept';
+        const validStatuses = ['accept', 'reject', 'pending'];
+        const isAdmin = isAdminValid(req);
+
+        // 🔍 Apply status filter
+        if (isAdmin) {
+            if (status && validStatuses.includes(status)) {
+                baseSearch.status = status;
+            }
+            // else show all statuses (no filter)
+        } else {
+            baseSearch.status = 'accept'; // users can only see accepted
         }
 
-        const members = await Member.find(searchQuery).skip(skip).limit(limit);
-        const total = await Member.countDocuments(searchQuery);
+        const members = await Member.find(baseSearch).skip(skip).limit(limit);
+        const total = await Member.countDocuments(baseSearch);
 
         const enrichedMembers = await Promise.all(members.map(enrichMember));
 
@@ -285,10 +294,23 @@ export async function searchMembers(req, res) {
             page,
             pages: Math.ceil(total / limit)
         });
+
     } catch (err) {
+        console.error("Search error:", err);
         res.status(500).json({
             message: "Search failed",
             error: err.message
         });
     }
 }
+
+
+//In a frontend application, you can use this logic for searching members
+/*
+<select onChange={(e) => setStatus(e.target.value)}>
+  <option value="">All</option>
+  <option value="accept">Accepted</option>
+  <option value="reject">Rejected</option>
+  <option value="pending">Pending</option>
+</select>
+*/
