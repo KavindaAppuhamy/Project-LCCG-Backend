@@ -12,15 +12,30 @@ async function enrichMember(member) {
 
 export async function getMembers(req, res) {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.max(1, parseInt(req.query.limit) || 10);
         const skip = (page - 1) * limit;
 
         const baseQuery = isAdminValid(req) ? {} : { status: 'accept' };
-        const members = await Member.find(baseQuery).skip(skip).limit(limit);
-        const totalMembers = await Member.countDocuments(baseQuery);
+        console.log("Base Query:", baseQuery);
 
-        const enrichedMembers = await Promise.all(members.map(enrichMember));
+        const [members, totalMembers] = await Promise.all([
+            Member.find(baseQuery).skip(skip).limit(limit),
+            Member.countDocuments(baseQuery)
+        ]);
+
+        console.log("Members Found:", members.length);
+
+        const enrichedMembers = await Promise.all(
+            members.map(async (member) => {
+                try {
+                    return await enrichMember(member); // optional
+                } catch (e) {
+                    console.error("Failed to enrich member:", member._id, e);
+                    return member; // fallback
+                }
+            })
+        );
 
         res.json({
             members: enrichedMembers,
@@ -29,12 +44,14 @@ export async function getMembers(req, res) {
             pages: Math.ceil(totalMembers / limit)
         });
     } catch (err) {
+        console.error("Error in getMembers:", err);
         res.status(500).json({ 
             message: "Failed to get members",
             error: err.message 
         });
     }
 }
+
 
 export async function createMember(req, res) {
     try {
