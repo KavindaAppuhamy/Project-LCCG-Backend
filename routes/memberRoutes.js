@@ -8,7 +8,6 @@ import {
     updateMemberStatus,
     searchMembers
 } from '../controllers/memberController.js';
-import { isAdminValid } from '../controllers/adminController.js';
 
 const memberRouter = express.Router();
 
@@ -19,8 +18,8 @@ memberRouter.get('/:id', getMemberById);
 memberRouter.post('/', createMember);
 
 // Protected routes theat means admin authentication is required
-memberRouter.put('/:id', isAdminValid, updateMember);
-memberRouter.delete('/:id',isAdminValid, deleteMember);
-memberRouter.patch('/:id/status',isAdminValid, updateMemberStatus);
+memberRouter.put('/:id', updateMember);
+memberRouter.delete('/:id',deleteMember);
+memberRouter.put('/:id/status',updateMemberStatus);
 
 export default memberRouter;
