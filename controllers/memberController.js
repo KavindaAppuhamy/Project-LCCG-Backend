@@ -1,5 +1,6 @@
 import Member from "../models/member.js";
 import { isAdminValid } from "./adminController.js";
+import mongoose from "mongoose";
 
 // Utility to enrich member with age and fullName
 async function enrichMember(member) {
@@ -171,6 +172,8 @@ export async function deleteMember(req, res) {
 }
 
 export async function updateMemberStatus(req, res) {
+    // Debug auth
+    console.log("User:", req.user);
     if (!isAdminValid(req)) {
         return res.status(403).json({
             message: "You are not authorized to update member status"
@@ -178,8 +181,13 @@ export async function updateMemberStatus(req, res) {
     }
 
     try {
+        const memberId = req.params.id;
         const { status } = req.body;
         const validStatuses = ['accept', 'reject', 'pending'];
+
+        if (!mongoose.Types.ObjectId.isValid(memberId)) {
+            return res.status(400).json({ message: "Invalid member ID format" });
+        }
 
         if (!validStatuses.includes(status)) {
             return res.status(400).json({
@@ -187,8 +195,10 @@ export async function updateMemberStatus(req, res) {
             });
         }
 
+        console.log("Updating member ID:", memberId, "with status:", status);
+
         const member = await Member.findByIdAndUpdate(
-            req.params.id,
+            memberId,
             { status },
             { new: true }
         );
@@ -197,17 +207,25 @@ export async function updateMemberStatus(req, res) {
             return res.status(404).json({ message: "Member not found" });
         }
 
+        // Try enrichMember if defined
+        let enriched = member;
+        if (typeof enrichMember === 'function') {
+            enriched = await enrichMember(member);
+        }
+
         res.json({
             message: "Member status updated successfully",
-            member: await enrichMember(member)
+            member: enriched
         });
     } catch (err) {
+        console.error("Error updating member status:", err);
         res.status(500).json({
             message: "Failed to update member status",
             error: err.message
         });
     }
 }
+
 
 export async function searchMembers(req, res) {
     try {
