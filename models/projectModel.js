@@ -31,6 +31,16 @@ const projectSchema = new mongoose.Schema({
                 default: "upcoming",
                 required: true
             },
+            highlight : {               
+                type : Boolean,
+                required : true,
+                default : false
+            },
+              order: {
+                type: Number,
+                required: false,
+                default: 0 // optional default
+            },    
             image: {
                 type: String,
                 required: true
