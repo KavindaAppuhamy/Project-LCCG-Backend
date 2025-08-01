@@ -1,5 +1,6 @@
 import Member from "../models/member.js";
 import { isAdminValid } from "./adminController.js";
+import mongoose from "mongoose";
 
 // Utility to enrich member with age and fullName
 async function enrichMember(member) {
@@ -10,17 +11,59 @@ async function enrichMember(member) {
     };
 }
 
-export async function getMembers(req, res) {
+export async function getAllMembers(req, res) {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const members = await Member.find(); // No filter on status
+
+        const enrichedMembers = await Promise.all(
+            members.map(async (member) => {
+                try {
+                    return await enrichMember(member);
+                } catch (e) {
+                    console.error("Failed to enrich member:", member._id, e);
+                    return member;
+                }
+            })
+        );
+
+        res.json({ members: enrichedMembers });
+
+    } catch (err) {
+        console.error("Error in getAllMembersForUsers:", err);
+        res.status(500).json({
+            message: "Failed to fetch members",
+            error: err.message
+        });
+    }
+}
+
+export async function getMembersForAdmin(req, res) {
+    if (!isAdminValid(req)) {
+        return res.status(403).json({
+            message: "You are not authorized to view all members"
+        });
+    }
+
+    try {
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.max(1, parseInt(req.query.limit) || 10);
         const skip = (page - 1) * limit;
 
-        const baseQuery = isAdminValid(req) ? {} : { status: 'accept' };
-        const members = await Member.find(baseQuery).skip(skip).limit(limit);
-        const totalMembers = await Member.countDocuments(baseQuery);
+        const [members, totalMembers] = await Promise.all([
+            Member.find().skip(skip).limit(limit),
+            Member.countDocuments()
+        ]);
 
-        const enrichedMembers = await Promise.all(members.map(enrichMember));
+        const enrichedMembers = await Promise.all(
+            members.map(async (member) => {
+                try {
+                    return await enrichMember(member);
+                } catch (e) {
+                    console.error("Failed to enrich member:", member._id, e);
+                    return member;
+                }
+            })
+        );
 
         res.json({
             members: enrichedMembers,
@@ -28,10 +71,12 @@ export async function getMembers(req, res) {
             page,
             pages: Math.ceil(totalMembers / limit)
         });
+
     } catch (err) {
-        res.status(500).json({ 
-            message: "Failed to get members",
-            error: err.message 
+        console.error("Error in getMembersForAdmin:", err);
+        res.status(500).json({
+            message: "Failed to fetch members",
+            error: err.message
         });
     }
 }
@@ -154,6 +199,8 @@ export async function deleteMember(req, res) {
 }
 
 export async function updateMemberStatus(req, res) {
+    // Debug auth
+    console.log("User:", req.user);
     if (!isAdminValid(req)) {
         return res.status(403).json({
             message: "You are not authorized to update member status"
@@ -161,8 +208,13 @@ export async function updateMemberStatus(req, res) {
     }
 
     try {
+        const memberId = req.params.id;
         const { status } = req.body;
         const validStatuses = ['accept', 'reject', 'pending'];
+
+        if (!mongoose.Types.ObjectId.isValid(memberId)) {
+            return res.status(400).json({ message: "Invalid member ID format" });
+        }
 
         if (!validStatuses.includes(status)) {
             return res.status(400).json({
@@ -170,8 +222,10 @@ export async function updateMemberStatus(req, res) {
             });
         }
 
+        console.log("Updating member ID:", memberId, "with status:", status);
+
         const member = await Member.findByIdAndUpdate(
-            req.params.id,
+            memberId,
             { status },
             { new: true }
         );
@@ -180,11 +234,18 @@ export async function updateMemberStatus(req, res) {
             return res.status(404).json({ message: "Member not found" });
         }
 
+        // Try enrichMember if defined
+        let enriched = member;
+        if (typeof enrichMember === 'function') {
+            enriched = await enrichMember(member);
+        }
+
         res.json({
             message: "Member status updated successfully",
-            member: await enrichMember(member)
+            member: enriched
         });
     } catch (err) {
+        console.error("Error updating member status:", err);
         res.status(500).json({
             message: "Failed to update member status",
             error: err.message
@@ -192,28 +253,38 @@ export async function updateMemberStatus(req, res) {
     }
 }
 
+
 export async function searchMembers(req, res) {
     try {
-        const { query } = req.query;
+        const { query, status } = req.query;
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const searchQuery = {
+        const baseSearch = {
             $or: [
-                { firstName: { $regex: query, $options: 'i' } },
-                { lastName: { $regex: query, $options: 'i' } },
-                { email: { $regex: query, $options: 'i' } },
-                { mylci: { $regex: query, $options: 'i' } }
+                { firstName: { $regex: query || '', $options: 'i' } },
+                { lastName: { $regex: query || '', $options: 'i' } },
+                { email: { $regex: query || '', $options: 'i' } },
+                { mylci: { $regex: query || '', $options: 'i' } }
             ]
         };
 
-        if (!isAdminValid(req)) {
-            searchQuery.status = 'accept';
+        const validStatuses = ['accept', 'reject', 'pending'];
+        const isAdmin = isAdminValid(req);
+
+        // 🔍 Apply status filter
+        if (isAdmin) {
+            if (status && validStatuses.includes(status)) {
+                baseSearch.status = status;
+            }
+            // else show all statuses (no filter)
+        } else {
+            baseSearch.status = 'accept'; // users can only see accepted
         }
 
-        const members = await Member.find(searchQuery).skip(skip).limit(limit);
-        const total = await Member.countDocuments(searchQuery);
+        const members = await Member.find(baseSearch).skip(skip).limit(limit);
+        const total = await Member.countDocuments(baseSearch);
 
         const enrichedMembers = await Promise.all(members.map(enrichMember));
 
@@ -223,10 +294,23 @@ export async function searchMembers(req, res) {
             page,
             pages: Math.ceil(total / limit)
         });
+
     } catch (err) {
+        console.error("Search error:", err);
         res.status(500).json({
             message: "Search failed",
             error: err.message
         });
     }
 }
+
+
+//In a frontend application, you can use this logic for searching members
+/*
+<select onChange={(e) => setStatus(e.target.value)}>
+  <option value="">All</option>
+  <option value="accept">Accepted</option>
+  <option value="reject">Rejected</option>
+  <option value="pending">Pending</option>
+</select>
+*/
