@@ -1,6 +1,7 @@
 import express from 'express';
 import {
-    getMembers,
+    getMembersForAdmin, 
+    getAllMembers, 
     createMember,
     getMemberById,
     updateMember,
@@ -12,12 +13,13 @@ import {
 const memberRouter = express.Router();
 
 // Public routes
-memberRouter.get('/', getMembers);
+memberRouter.get('/all-members', getAllMembers);
 memberRouter.get('/search', searchMembers);
 memberRouter.get('/:id', getMemberById);
 memberRouter.post('/', createMember);
 
 // Protected routes theat means admin authentication is required
+memberRouter.get('/admin/all-members', getMembersForAdmin);
 memberRouter.put('/:id', updateMember);
 memberRouter.delete('/:id',deleteMember);
 memberRouter.put('/:id/status',updateMemberStatus);

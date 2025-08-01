@@ -11,29 +11,56 @@ async function enrichMember(member) {
     };
 }
 
-export async function getMembers(req, res) {
+export async function getAllMembers(req, res) {
+    try {
+        const members = await Member.find(); // No filter on status
+
+        const enrichedMembers = await Promise.all(
+            members.map(async (member) => {
+                try {
+                    return await enrichMember(member);
+                } catch (e) {
+                    console.error("Failed to enrich member:", member._id, e);
+                    return member;
+                }
+            })
+        );
+
+        res.json({ members: enrichedMembers });
+
+    } catch (err) {
+        console.error("Error in getAllMembersForUsers:", err);
+        res.status(500).json({
+            message: "Failed to fetch members",
+            error: err.message
+        });
+    }
+}
+
+export async function getMembersForAdmin(req, res) {
+    if (!isAdminValid(req)) {
+        return res.status(403).json({
+            message: "You are not authorized to view all members"
+        });
+    }
+
     try {
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = Math.max(1, parseInt(req.query.limit) || 10);
         const skip = (page - 1) * limit;
 
-        const baseQuery = isAdminValid(req) ? {} : { status: 'accept' };
-        console.log("Base Query:", baseQuery);
-
         const [members, totalMembers] = await Promise.all([
-            Member.find(baseQuery).skip(skip).limit(limit),
-            Member.countDocuments(baseQuery)
+            Member.find().skip(skip).limit(limit),
+            Member.countDocuments()
         ]);
-
-        console.log("Members Found:", members.length);
 
         const enrichedMembers = await Promise.all(
             members.map(async (member) => {
                 try {
-                    return await enrichMember(member); // optional
+                    return await enrichMember(member);
                 } catch (e) {
                     console.error("Failed to enrich member:", member._id, e);
-                    return member; // fallback
+                    return member;
                 }
             })
         );
@@ -44,15 +71,15 @@ export async function getMembers(req, res) {
             page,
             pages: Math.ceil(totalMembers / limit)
         });
+
     } catch (err) {
-        console.error("Error in getMembers:", err);
-        res.status(500).json({ 
-            message: "Failed to get members",
-            error: err.message 
+        console.error("Error in getMembersForAdmin:", err);
+        res.status(500).json({
+            message: "Failed to fetch members",
+            error: err.message
         });
     }
 }
-
 
 export async function createMember(req, res) {
     try {
