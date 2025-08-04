@@ -49,6 +49,58 @@ const memberSchema = new mongoose.Schema({
         enum: ['male', 'female', 'other'],
         required: [true, 'Gender is required']
     },
+    address: {
+        type: String,
+        required: [true, 'Address is required'],
+        trim: true
+    },
+    occupation: {
+        type: String,
+        required: [true, 'Occupation is required'],
+        trim: true,
+        enum: {
+            values: [
+                'School Student',
+                'A/L Student',
+                'O/L Student',
+                'University Undergraduate',
+                'Vocational Training Student',
+                'Graduate Student',
+                'Intern / Trainee',
+                'Junior Software Engineer',
+                'Assistant Teacher',
+                'Customer Service Representative',
+                'Freelance Designer / Developer',
+                'Youth Volunteer',
+                'Environmental Activist',
+                'Blood Donation Organizer',
+                'Event Coordinator',
+                'Social Media Volunteer',
+                'Web Developer',
+                'Graphic Designer',
+                'Content Creator',
+                'Photographer / Videographer',
+                'App Developer',
+                'Small Business Owner',
+                'Marketing Assistant',
+                'Sales Executive',
+                'Finance Trainee',
+                'Business Management Student',
+                'Nursing Student',
+                'Medical Intern',
+                'Psychology Student',
+                'Social Work Volunteer',
+                'Engineering Undergraduate',
+                'Technician (Electrical / Mechanical)',
+                'IT Support Assistant',
+                'CAD Designer',
+                'Peer Tutor',
+                'Teaching Assistant',
+                'Educational Content Creator'
+            ],
+            message: 'Please select a valid occupation'
+        }
+    },    
     joinDate: {
         type: Date,
         default: Date.now
