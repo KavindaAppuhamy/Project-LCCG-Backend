@@ -76,3 +76,33 @@ export const deleteTestimonial = async (req, res) => {
     res.status(500).json({ message: "Failed to delete testimonial", error: error.message });
   }
 };
+// GET /api/testimonials/search?page=1&limit=5&query=abc&status=active
+export const searchTestimonials = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+    const query = req.query.query || "";
+    const status = req.query.status;
+
+    const filter = {
+      $or: [
+        { name: { $regex: query, $options: "i" } },
+        { speech: { $regex: query, $options: "i" } }
+      ]
+    };
+
+    if (status === "active") filter.disabled = false;
+    if (status === "disabled") filter.disabled = true;
+
+    const total = await Testimonial.countDocuments(filter);
+    const testimonials = await Testimonial.find(filter)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    res.json({ testimonials, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    res.status(500).json({ message: "Error searching testimonials", error: err.message });
+  }
+};

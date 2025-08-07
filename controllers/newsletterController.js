@@ -78,3 +78,66 @@ export async function viewAllNewsletters(req, res) {
     res.status(500).json({ message: "Failed to load newsletters", error: error.message });
   }
 }
+// View all newsletters with pagination
+export async function viewAllNewslettersPaginated(req, res) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const total = await Newsletter.countDocuments();
+    const newsletters = await Newsletter.find()
+      .sort({ date: -1 }) // newest first
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      newsletters,
+      page,
+      total,
+      pages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to load newsletters", error: error.message });
+  }
+}
+// Search + Pagination
+export async function searchNewsletters(req, res) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const query = req.query.query?.trim() || "";
+    const status = req.query.status;
+
+    const filter = {
+      ...(query && {
+        title: { $regex: new RegExp(query, "i") } // title search
+      }),
+      ...(status === "active"
+        ? { disabled: false }
+        : status === "disabled"
+        ? { disabled: true }
+        : {})
+    };
+
+    const total = await Newsletter.countDocuments(filter);
+    const newsletters = await Newsletter.find(filter)
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      newsletters,
+      page,
+      total,
+      pages: Math.ceil(total / limit)
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to search newsletters",
+      error: error.message
+    });
+  }
+}
