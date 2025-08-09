@@ -30,6 +30,12 @@ export const createProject = async (req, res) => {
     const project = await Project.create(req.body);
     res.status(201).json(project);
   } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return res.status(400).json({
+        message: `Duplicate value for '${field}': '${error.keyValue[field]}'. Please use a unique value.`
+      });
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -55,7 +61,13 @@ export const updateProject = async (req, res) => {
     }
 
     res.json(updatedProject);
-  } catch (error) {
+   } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return res.status(400).json({
+        message: `Duplicate value for '${field}': '${error.keyValue[field]}'. Please use a unique value.`
+      });
+    }
     res.status(500).json({ message: "Failed to update project", error: error.message });
   }
 };
@@ -84,6 +96,38 @@ export const viewAllProjects = async (req, res) => {
   try {
     const projects = await Project.find();
     res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to load projects", error: error.message });
+  }
+};
+
+// Get projects with pagination
+export const getProjectsPaginated = async (req, res) => {
+  try {
+    let { page = 1, limit = 10, status } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    const skip = (page - 1) * limit;
+
+    // Build query object
+    const query = {};
+    if (status && status !== "all" && status !== "order") {
+      query.status = status;
+    }
+
+    const [projects, total] = await Promise.all([
+      Project.find(query).skip(skip).limit(limit),
+      Project.countDocuments(query)
+    ]);
+
+    res.status(200).json({
+      projects,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total
+    });
   } catch (error) {
     res.status(500).json({ message: "Failed to load projects", error: error.message });
   }

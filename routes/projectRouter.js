@@ -1,7 +1,9 @@
 import express from "express";
-import {createProject, getProject, deleteProject, updateProject, viewAllProjects} from "../controllers/projectController.js";
+import {createProject, getProject, deleteProject, updateProject, viewAllProjects, getProjectsPaginated} from "../controllers/projectController.js";
 
 const projectRouter = express.Router();
+
+projectRouter.get("/search", getProjectsPaginated);
 
 projectRouter.put('/update/:id', updateProject);
 projectRouter.delete('/delete/:id', deleteProject);
