@@ -1,8 +1,9 @@
 import express from "express";
-import {getAllTestimonials, getTestimonial, createTestimonial, updateTestimonial, deleteTestimonial, searchTestimonials} from "../controllers/testimonialController.js";
+import {getAllTestimonials, getTestimonial, createTestimonial, updateTestimonial, deleteTestimonial, searchTestimonials, getTestimonialsPaginated} from "../controllers/testimonialController.js";
 
 const testimonialRouter = express.Router();
 
+testimonialRouter.get("/search", getTestimonialsPaginated);
 
 testimonialRouter.get("/", getAllTestimonials);
 
@@ -14,6 +15,6 @@ testimonialRouter.put("/:id", updateTestimonial);
 
 testimonialRouter.delete("/:id", deleteTestimonial);
 
-testimonialRouter.get("/search", searchTestimonials);
+
 
 export default testimonialRouter;
