@@ -132,3 +132,28 @@ export const getProjectsPaginated = async (req, res) => {
     res.status(500).json({ message: "Failed to load projects", error: error.message });
   }
 };
+
+
+
+
+// Get highlight project + 4 related projects
+export const getFeaturedAndRelatedProjects = async (req, res) => {
+  try {
+    // Find the highlight project, status != 'disabled'
+    const highlightProject = await Project.findOne({ highlight: true, status: { $ne: "disabled" } });
+
+    // Find related projects with order 1-5, highlight false, status != disabled, limit 4, sorted by order ascending
+    const relatedProjects = await Project.find({
+      highlight: false,
+      status: { $ne: "disabled" },
+      order: { $gt: 0, $lte: 5 }
+    })
+      .sort({ order: 1 })
+      .limit(4);
+
+    res.status(200).json({ highlightProject, relatedProjects });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch projects", error: error.message });
+  }
+};
+
