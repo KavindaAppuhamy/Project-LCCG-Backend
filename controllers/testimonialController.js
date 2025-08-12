@@ -106,3 +106,42 @@ export const searchTestimonials = async (req, res) => {
     res.status(500).json({ message: "Error searching testimonials", error: err.message });
   }
 };
+
+export const getTestimonialsPaginated = async (req, res) => {
+  try {
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit) || 10, 1);
+    const skip = (page - 1) * limit;
+
+    const queryStr = req.query.query ? req.query.query.trim() : "";
+    const disabledFilter = req.query.disabled; // 'true'/'false'/'all' | optional
+
+    const mongoQuery = {};
+    if (queryStr) {
+      // search by name, position, speech
+      mongoQuery.$or = [
+        { name: { $regex: queryStr, $options: "i" } },
+        { position: { $regex: queryStr, $options: "i" } },
+        { speech: { $regex: queryStr, $options: "i" } },
+      ];
+    }
+    if (disabledFilter === "true") mongoQuery.disabled = true;
+    else if (disabledFilter === "false") mongoQuery.disabled = false;
+    // else 'all' or unspecified -> no filter
+
+    const total = await Testimonial.countDocuments(mongoQuery);
+    const docs = await Testimonial.find(mongoQuery)
+      .sort({ _id: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      testimonials: docs,
+      page,
+      total,
+      pages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to load testimonials", error: error.message });
+  }
+};

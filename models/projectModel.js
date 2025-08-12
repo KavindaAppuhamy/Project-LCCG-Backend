@@ -47,5 +47,16 @@ const projectSchema = new mongoose.Schema({
             }
 });
 
+
+// Unique highlight already assumed created somewhere else
+// Add unique partial index for order:
+projectSchema.index(
+  { order: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { highlight: false, order: { $gt: 0 } }
+  }
+);
+
 const Project = mongoose.model("Project", projectSchema);
 export default Project;

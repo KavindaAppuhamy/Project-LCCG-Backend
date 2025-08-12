@@ -1,8 +1,10 @@
 import express from "express";
-import {createProject, getProject, deleteProject, updateProject, viewAllProjects} from "../controllers/projectController.js";
+import {createProject, getProject, deleteProject, updateProject, viewAllProjects, getProjectsPaginated, getFeaturedAndRelatedProjects} from "../controllers/projectController.js";
 
 const projectRouter = express.Router();
 
+projectRouter.get("/search", getProjectsPaginated);
+projectRouter.get("/featured-and-related", getFeaturedAndRelatedProjects);
 projectRouter.put('/update/:id', updateProject);
 projectRouter.delete('/delete/:id', deleteProject);
 projectRouter.get('/get/:id', getProject);
