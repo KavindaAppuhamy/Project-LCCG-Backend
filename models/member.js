@@ -13,8 +13,10 @@ const memberSchema = new mongoose.Schema({
     },
     mylci: {
         type: String,
+        trim: true,
         unique: true,
-        trim: true
+        sparse: true,
+        set: v => v?.trim() === "" ? null : v
     },
     email: {
         type: String,
@@ -72,7 +74,7 @@ const memberSchema = new mongoose.Schema({
     position: {
         type: String,
         trim: true,
-        required: [true, 'Position is required'],
+        default: 'Member'
     },
     image: {
         type: String, // This will store the path or URL to the image
