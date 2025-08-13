@@ -13,8 +13,10 @@ const memberSchema = new mongoose.Schema({
     },
     mylci: {
         type: String,
+        trim: true,
         unique: true,
-        trim: true
+        sparse: true,
+        set: v => v?.trim() === "" ? null : v
     },
     email: {
         type: String,
