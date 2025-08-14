@@ -83,6 +83,11 @@ export async function getMembersForAdmin(req, res) {
 
 export async function createMember(req, res) {
     try {
+        
+        if (!req.body.mylci || req.body.mylci.trim() === "") {
+            delete req.body.mylci; // removes the field entirely
+        }
+
         const member = new Member(req.body);
         await member.save();
 
@@ -110,6 +115,7 @@ export async function createMember(req, res) {
         }
     }
 }
+
 
 export async function getMemberById(req, res) {
     try {
@@ -140,10 +146,28 @@ export async function updateMember(req, res) {
     }
 
     try {
+        const updateData = { ...req.body };
+        const updateOps = {};
+
+        // Handle normal fields
+        const fieldsToUpdate = { ...updateData };
+        delete fieldsToUpdate.mylci; // remove mylci from normal fields
+
+        if (Object.keys(fieldsToUpdate).length > 0) {
+            updateOps.$set = fieldsToUpdate;
+        }
+
+        // Handle mylci removal
+        if (!updateData.mylci || updateData.mylci.trim() === "") {
+            updateOps.$unset = { mylci: "" };
+        } else {
+            updateOps.$set = { ...updateOps.$set, mylci: updateData.mylci };
+        }
+
         const member = await Member.findByIdAndUpdate(
             req.params.id,
-            req.body,
-            { new: true, runValidators: true }
+            updateOps,
+            { new: true, runValidators: true, context: 'query' }
         );
 
         if (!member) {
@@ -174,6 +198,8 @@ export async function updateMember(req, res) {
         }
     }
 }
+
+
 
 export async function deleteMember(req, res) {
     if (!isAdminValid(req)) {
