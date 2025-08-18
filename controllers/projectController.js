@@ -16,12 +16,23 @@ export const getProject = async (req, res) => {
 };
 
 // Create new project (admin only)
+// Create new project (admin only)
 export const createProject = async (req, res) => {
   if (!isAdminValid(req)) {
     return res.status(403).json({ message: "Unauthorized access" });
   }
 
   try {
+    // Check for duplicate order
+    if (req.body.order !== undefined && req.body.order > 0) {
+      const duplicate = await Project.findOne({ order: req.body.order });
+      if (duplicate) {
+        return res.status(400).json({
+          message: `Order number '${req.body.order}' is already used by another project. Please choose a unique number.`
+        });
+      }
+    }
+
     // If highlight is true, un-highlight all others first
     if (req.body.highlight === true) {
       await Project.updateMany({ highlight: true }, { $set: { highlight: false } });
@@ -29,6 +40,7 @@ export const createProject = async (req, res) => {
 
     const project = await Project.create(req.body);
     res.status(201).json(project);
+
   } catch (error) {
     if (error.code === 11000) {
       const field = Object.keys(error.keyValue)[0];
@@ -41,6 +53,7 @@ export const createProject = async (req, res) => {
 };
 
 
+
 // Update project (admin only)
 export const updateProject = async (req, res) => {
   if (!isAdminValid(req)) {
@@ -50,18 +63,34 @@ export const updateProject = async (req, res) => {
   const { id } = req.params;
 
   try {
+    // Check for duplicate order before saving
+    if (req.body.order !== undefined && req.body.order > 0) {
+      const duplicate = await Project.findOne({
+        _id: { $ne: id }, // exclude current project
+        order: req.body.order
+      });
+
+      if (duplicate) {
+        return res.status(400).json({
+          message: `Order number '${req.body.order}' is already used by another project. Please choose a unique number.`
+        });
+      }
+    }
+
     // If highlight is being set to true, remove it from others
     if (req.body.highlight === true) {
-      await Project.updateMany({ highlight: true }, { $set: { highlight: false } });
+      await Project.updateMany({ highlight: true, _id: { $ne: id } }, { $set: { highlight: false } });
     }
 
     const updatedProject = await Project.findByIdAndUpdate(id, req.body, { new: true });
+
     if (!updatedProject) {
       return res.status(404).json({ message: "Project not found" });
     }
 
     res.json(updatedProject);
-   } catch (error) {
+
+  } catch (error) {
     if (error.code === 11000) {
       const field = Object.keys(error.keyValue)[0];
       return res.status(400).json({
