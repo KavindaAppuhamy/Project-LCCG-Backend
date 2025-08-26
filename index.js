@@ -29,27 +29,23 @@ const connectionString = process.env.MONGO_URL;
 
 
 //Middleware
-app.use((req,res,next)=>{                                               
-
-    const token = req.header("Authorization")?.replace("Bearer ", "")   
-                                                                        
-    if(token != null){                          
-      jwt.verify(token,process.env.JWT_KEY,                
-        (err,decoded)=>{                        
-        if(decoded != null){                    
-          req.user = decoded                    
-          next()                  
-        }else{                                  
-          next()
-        }
-  
+app.use((req, res, next) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+  if (token != null) {
+    jwt.verify(token, process.env.JWT_KEY, (err, decoded) => {
+      if (err) {
+        // Token is expired or invalid
+        req.user = null; // remove user
+        console.log("Token error:", err.message); // -> "jwt expired" after 1 min
+      } else {
+        req.user = decoded; // token valid
       }
-    )
-    }else{
-      next()
-    }
-  
-  });
+      next();
+    });
+  } else {
+    next();
+  }
+});
 
 // Connect to MongoDB
 mongoose.connect(connectionString).then(     
