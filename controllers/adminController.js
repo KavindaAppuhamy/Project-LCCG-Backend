@@ -26,27 +26,36 @@ export function isAdminValid(req) {
 //creeate admin
 export async function postAdmins(req, res) {
   try {
-    const user = req.body;
+    const { email, password, userName } = req.body;
 
-    // Hash password
-    const password = user.password;
+    // 🔹 1. Check if email already exists
+    const existingAdmin = await Admin.findOne({ email: email.toLowerCase() });
+    if (existingAdmin) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    // 🔹 2. Hash password
     const passwordHash = bcrypt.hashSync(password, 10);
-    user.password = passwordHash;
 
-    const newAdmin = new Admin(user);
+    // 🔹 3. Create new admin
+    const newAdmin = new Admin({
+      userName,
+      email: email.toLowerCase(),
+      password: passwordHash,
+    });
     await newAdmin.save();
 
-    // Generate OTP
+    // 🔹 4. Generate OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const newOtp = new Otp({ email: user.email, otp });
+    const newOtp = new Otp({ email: newAdmin.email, otp });
     await newOtp.save();
 
-    // Send email
-    await sendOtpEmail(user.email, otp);
+    // 🔹 5. Send OTP via email
+    await sendOtpEmail(newAdmin.email, otp);
 
-    res.json({ message: "Admin created successfully. OTP sent." });
+    res.status(201).json({ message: "Admin created successfully. OTP sent." });
   } catch (error) {
-    res.json({
+    res.status(500).json({
       message: "Admin creation failed",
       error: error.message,
     });
@@ -91,7 +100,7 @@ export function adminLogin(req, res) {
           emailVerified: user.emailVerified,
         };
 
-        const token = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "1m" });
+        const token = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "5m" });
 
         res.json({
           message: "Login successful",
