@@ -58,6 +58,8 @@ mongoose.connect(connectionString).then(
     )
 )
 
+app.get("/", (req, res) => res.send("Server is running"));// Add healthcheck route here
+
 // Route mounting
 app.use("/api/admin",adminRouter)
 app.use("/api/member", memberRouter)
