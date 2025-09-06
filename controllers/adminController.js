@@ -100,7 +100,7 @@ export function adminLogin(req, res) {
           emailVerified: user.emailVerified,
         };
 
-        const token = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "5m" });
+        const token = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "1h" });
 
         res.json({
           message: "Login successful",
