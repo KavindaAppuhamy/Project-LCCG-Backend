@@ -249,16 +249,17 @@ const memberSchema = new mongoose.Schema({
                 if (!v) return true; // Allow null/undefined
                 
                 // Check for valid URL format
-                const urlPattern = /^https?:\/\/(?:[-\w.])+(?:\:[0-9]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?$/;
+                const urlPattern = /^https?:\/\/[^\s/$.?#].[^\s]*$/i;
                 // Check for valid file path
-                const filePathPattern = /^\/[a-zA-Z0-9\/._-]+\.(jpg|jpeg|png|gif|webp)$/i;
+                const filePathPattern = /^\/[a-zA-Z0-9\/._\-\[\]]+\.(jpg|jpeg|png|gif|webp)$/i;
                 
                 return urlPattern.test(v) || filePathPattern.test(v);
             },
             message: 'Image must be a valid URL or file path'
         }
     }
-}, {
+},
+{
     timestamps: true, 
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
